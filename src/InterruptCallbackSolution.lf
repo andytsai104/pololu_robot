@@ -1,0 +1,59 @@
+target C {
+    platform: {
+        name: "rp2040",
+        board: "pololu_3pi_2040_robot"
+    },
+    single-threaded: true,
+    keepalive: true
+}
+
+main reactor {
+    preamble {=
+        #include <stdio.h>
+        #include "pico/stdlib.h"
+        #include "hardware/gpio.h"
+
+        // GPIO pin number for Button A
+        # define BUTTON_A_PIN 25
+
+        // pointer to the physical action
+        static void* action_ptr = NULL;
+
+        // callback invoked when the button triggers
+        void gpio_callback(uint gpio, uint32_t event_mask) {
+            printf("Interrupt callback: gpio=%u, event_mask=0x%08x\n", gpio, event_mask);
+        }
+    =}
+    
+    // defining a physical action triggered by the ISR
+    physical action button_press;
+
+    reaction(startup) {=
+        stdio_init_all();
+
+        // initialize the GPIO for the button
+        gpio_init(BUTTON_A_PIN);
+        gpio_set_dir(BUTTON_A_PIN, GPIO_IN);
+        gpio_pull_up(BUTTON_A_PIN);
+
+        // clear any prior interrupt state
+        gpio_acknowledge_irq(BUTTON_A_PIN, 
+                            GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL | 
+                            GPIO_IRQ_LEVEL_HIGH | GPIO_IRQ_LEVEL_LOW);
+
+        // enable callback on a rising edge (one press event)
+        gpio_set_irq_enabled_with_callback(
+            BUTTON_A_PIN,
+            GPIO_IRQ_EDGE_RISE,
+            true,
+            gpio_callback
+        );
+
+        // store the action pointer for ISR scheduling
+        action_ptr = button_press;
+    =}
+
+    reaction(button_press) {=
+        printf("Reaction to button_press at logical time %lld\n", (long long) lf_time_logical());
+    =}
+}

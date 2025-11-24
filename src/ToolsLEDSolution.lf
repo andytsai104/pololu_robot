@@ -1,0 +1,33 @@
+target C {
+    platform: {
+    name: "rp2040",
+    board: "pololu_3pi_2040_robot"
+  },
+  single-threaded: true
+}
+
+// importing LED reactor
+import LED from "LED.lf"
+
+preamble {=
+    #include <stdio.h>
+=}
+
+main reactor {
+    led = new LED()
+
+    // timer for turning on the LED
+    timer led_on(0, 500 ms)
+    // timer for turning off the LED
+    timer led_off(250 ms, 500 ms)
+
+    reaction(led_on) -> led.set {=
+        // lf_set to declare the output of the reaction
+        lf_set(led.set, true);
+    =}
+
+    reaction(led_off) -> led.set {=
+        // lf_set to declare the output of the reaction
+        lf_set(led.set, false);    
+    =}
+}

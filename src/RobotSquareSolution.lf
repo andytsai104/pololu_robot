@@ -1,0 +1,137 @@
+target C {
+    platform: {
+        name: "rp2040",
+        board: "pololu_3pi_2040_robot"
+    },
+    single-threaded: true
+}
+
+import Display from "lib/Display.lf"
+import Motors from "lib/Motors.lf"
+import Encoders from "lib/Encoders.lf"
+import GyroAngle from "lib/IMU.lf"
+import AngleToDistance from "RobotEncoderSolution.lf"
+
+reactor Robot {
+    preamble {=
+        #include <math.h>
+        #include <stdio.h>
+    =}
+
+    input distance_in: float
+    input angle_in: float
+
+    output left_power: float
+    output right_power: float
+    output notify: string
+
+    // power for driving straight
+    state drive_power: float = 0.1
+    // power for turning
+    state turn_power: float = 0.1
+    // distance in meters
+    state target_dist: float = 0.5
+    // angle in degrees
+    state target_angle: float = 90.0
+
+    // variables to track starting points
+    state start_distance: float = 0.0
+    state start_angle: float = 0.0
+
+    initial mode INIT {
+        reaction(startup) -> notify, left_power, right_power {=
+            lf_set(notify, "INIT");
+            lf_set(left_power, 0.0f);
+            lf_set(right_power, 0.0f);
+        =}
+
+        reaction(distance_in, angle_in) -> reset(PRE_DRIVE) {=
+            // do nothing just transition to the first active state
+            lf_set_mode(PRE_DRIVE);
+        =}
+    }
+
+    mode PRE_DRIVE {
+        reaction(distance_in) -> reset(DRIVING), notify, left_power, right_power {=
+            self->start_distance = distance_in->value;
+            lf_set(notify, "DRIVING");
+            // set motors to drive forward
+            lf_set(left_power, self->drive_power);
+            lf_set(right_power, self->drive_power);
+            lf_set_mode(DRIVING);
+        =}
+    }
+
+    mode DRIVING {
+        reaction(distance_in) -> reset(PRE_TURN), notify, left_power, right_power {=
+            float traveled = distance_in->value - self->start_distance;
+
+            // check if reached the target distance
+            if (traveled >= self->target_dist) {
+                lf_set(notify, "STOPPING");
+                // transition to the PRE_TURN state
+                lf_set(left_power, 0.0f);
+                lf_set(right_power, 0.0f);
+                lf_set_mode(PRE_TURN);
+            }
+        =}
+    }
+
+    mode PRE_TURN {
+        reaction(angle_in) -> reset(TURNING), notify, left_power, right_power {=
+        // get the current angle
+        self->start_angle = angle_in->value;
+        lf_set(notify, "TURNING");
+        // set motors to turn right (left fwd, right rev)
+        lf_set(left_power, self->turn_power);
+        lf_set(right_power, -self->turn_power);
+        lf_set_mode(TURNING);
+        =}
+    }
+
+    mode TURNING {
+        reaction(angle_in) -> reset(PRE_DRIVE), notify, left_power, right_power {=
+        // calculate how far the robot turned
+        float turned = fabsf(angle_in->value - self->start_angle);
+
+        // check if reached the target angle
+        if (turned >= self->target_angle) {
+            lf_set(notify, "STOPPING");
+            // transition back to the PRE_DRIVE state
+            lf_set(left_power, 0.0f);
+            lf_set(right_power, 0.0f);
+            lf_set_mode(PRE_DRIVE);
+        }
+        =}
+    }
+}
+
+main reactor {
+    preamble {=
+        #include <stdio.h>
+    =}
+
+    timer sensor_timer(0, 100 msec)
+
+    display = new Display()
+    motors = new Motors()
+    encoder = new Encoders()
+    dist_conv = new AngleToDistance()
+    gyro = new GyroAngle()
+    robot = new Robot()
+
+    reaction(sensor_timer) -> encoder.trigger, gyro.trigger {=
+        lf_set(encoder.trigger, true);
+        lf_set(gyro.trigger, true);
+    =}
+
+    encoder.left -> dist_conv.angle     // using left wheel for distance
+    dist_conv.distance -> robot.distance_in
+
+    gyro.z -> robot.angle_in // using Z-axis (yaw) for angle
+
+    robot.left_power -> motors.left_power
+    robot.right_power -> motors.right_power
+
+    robot.notify -> display.line0
+}

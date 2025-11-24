@@ -1,0 +1,46 @@
+target C {
+  platform: {
+    name: "rp2040",
+    board: "pololu_3pi_2040_robot"
+  },
+  single-threaded: true
+}
+
+
+preamble {=
+  #include <stdio.h>
+  #include <pico/stdlib.h>
+  #include <hardware/gpio.h>
+
+  #define GPIO_OUT_SET     (*(volatile uint32_t *)(0xd0000014))     // set gpio high -> turn off
+  #define GPIO_OUT_CLR     (*(volatile uint32_t *)(0xd0000018))     // set gpio low -> light up
+  #define PIN_MASK (1ul << PICO_DEFAULT_LED_PIN)    // Mask for the LED pin
+=}
+
+main reactor {
+  timer t(0, 250 ms)
+  state led_on: bool = false
+
+  reaction(startup) {=
+    gpio_init(PICO_DEFAULT_LED_PIN);
+    gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
+  =}
+
+  reaction(t) {=
+    self->led_on = !self->led_on;
+    printf("LED State: %b\n", self->led_on);
+
+    // TODO: Change this not to use SDK function gpio_put
+    //gpio_put(PICO_DEFAULT_LED_PIN, !self->led_on);
+
+    if (self->led_on){
+        // Turn on the LED
+        GPIO_OUT_CLR = PIN_MASK;
+    }
+    else{
+        // Turn off the LED
+        GPIO_OUT_SET = PIN_MASK;
+    }
+
+  =}
+}

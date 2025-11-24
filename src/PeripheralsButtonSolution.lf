@@ -1,0 +1,45 @@
+target C {
+  platform: {
+    name: "rp2040",
+    board: "pololu_3pi_2040_robot"
+  },
+  single-threaded: true
+};
+
+import Display from "lib/Display.lf";
+
+preamble {=
+  #include <stdio.h>
+  #include <pico/stdlib.h>
+  #include <hardware/gpio.h>
+
+  // Use a clear name for the button pin
+  #define BUTTON_A_PIN 25
+=}
+
+main reactor {
+  timer t(0, 250 msec);
+  d = new Display();
+
+  reaction(startup) {=
+    gpio_init(BUTTON_A_PIN);
+    gpio_set_dir(BUTTON_A_PIN, GPIO_IN);
+    // Enable the internal pull-up resistor
+    gpio_pull_up(BUTTON_A_PIN);
+  =}
+
+  // Read the state of button A and print it to the display
+  reaction(t) -> d.line0 {=
+    bool button_is_pressed = !gpio_get(BUTTON_A_PIN);
+
+    // Buffer for the display text
+    static char buf0[17];
+
+    if (button_is_pressed) {
+        snprintf(buf0, 17, "Pressed");
+    } else {
+        snprintf(buf0, 17, "Not Pressed");
+    }
+    lf_set(d.line0, buf0);
+  =}
+}

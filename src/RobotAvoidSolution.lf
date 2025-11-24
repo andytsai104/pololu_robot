@@ -1,0 +1,187 @@
+target C {
+    platform: {
+        name: "rp2040",
+        board: "pololu_3pi_2040_robot"
+    },
+    single-threaded: true
+}
+
+import Display from "lib/Display.lf"
+import Motors from "lib/Motors.lf"
+import Encoders from "lib/Encoders.lf"
+import GyroAngle from "lib/IMU.lf"
+import Bump from "lib/Bump.lf"
+import AngleToDistance from "RobotEncoderSolution.lf"
+
+reactor Robot {
+    preamble {=
+        #include <math.h>
+        #include <stdio.h>
+    =}
+
+    input distance_in: float
+    input angle_in: float
+    input bump_left: bool
+    input bump_right: bool
+
+    output left_power: float 
+    output right_power: float 
+    output notify: string
+
+    logical action backup 
+    logical action avoid
+    logical action turn 
+
+    state drive_power: float = 0.1
+    state turn_power: float = 0.1
+    state target_dist: float = 0.1
+    state target_angle: float = 90.0
+
+    state start_distance: float = 0.0
+    state start_angle: float   = 0.0
+
+    state turn_left: bool = false       // true = turn left, false = turn right
+
+
+
+   initial mode INIT {
+        reaction(startup) -> notify, left_power, right_power, backup, turn {=
+                lf_set(notify, "INIT");
+                lf_set(left_power, 0.0f);
+                lf_set(right_power, 0.0f);
+
+                lf_schedule(backup, 0);
+                lf_schedule(turn, 0);
+        =}
+
+        reaction(distance_in, angle_in) -> reset(PRE_DRIVE) {=
+            lf_set_mode(PRE_DRIVE);
+        =}
+    }
+
+    mode PRE_DRIVE {
+        reaction(distance_in) -> reset(DRIVING), notify, left_power, right_power {=
+            self->start_distance = distance_in->value;
+            lf_set(notify, "DRIVING");
+            lf_set(left_power, self->drive_power);
+            lf_set(right_power, self->drive_power);
+            lf_set_mode(DRIVING);
+        =}
+    }
+
+    mode DRIVING {
+        // Distance target reached -> stop and turn
+        reaction(distance_in) -> reset(PRE_TURN), notify, left_power, right_power {=
+            float traveled = distance_in->value - self->start_distance;
+            if (traveled >= self->target_dist) {
+                lf_set(notify, "STOPPING");
+                lf_set(left_power, 0.0f);
+                lf_set(right_power, 0.0f);
+                lf_set_mode(PRE_TURN);
+            }
+        =}
+
+        // Bump on left -> back up and turn right
+        reaction(bump_left) -> reset(BACKING_UP), notify, left_power, right_power, backup {=
+            lf_set(notify, "BUMP LEFT! BACKING");
+            self->turn_left = false;
+            // Back up for 0.5 sec
+            lf_set(left_power, -self->drive_power);
+            lf_set(right_power, -self->drive_power);
+            lf_set_mode(BACKING_UP);
+            lf_schedule(backup, MSEC(500));
+        =}
+
+        // Bump on right -> back up and turn left
+        reaction(bump_right) -> reset(BACKING_UP), notify, left_power, right_power, backup {=
+            lf_set(notify, "BUMP RIGHT! BACKING");
+            self->turn_left = true;
+            // Back up for 0.5 sec
+            lf_set(left_power, -self->drive_power);
+            lf_set(right_power, -self->drive_power);
+            lf_set_mode(BACKING_UP);
+            lf_schedule(backup, MSEC(500));
+        =}
+    }
+
+    mode BACKING_UP {
+        reaction(backup) -> reset(AVOID_TURN), notify, left_power, right_power, turn {=
+        if (self->turn_left) {
+            lf_set(notify, "AVOID L");
+            lf_set(left_power, -self->turn_power);
+            lf_set(right_power,  self->turn_power);
+        } else {
+            lf_set(notify, "AVOID R");
+            lf_set(left_power,  self->turn_power);
+            lf_set(right_power, -self->turn_power);
+        }
+        lf_schedule(turn, MSEC(500));
+        lf_set_mode(AVOID_TURN); 
+        =}
+    }
+
+    mode AVOID_TURN {
+        reaction(turn) -> reset(PRE_DRIVE), notify, left_power, right_power {=
+            lf_set(notify, "RESUME");
+            lf_set(left_power, 0.0f);
+            lf_set(right_power, 0.0f);
+            lf_set_mode(PRE_DRIVE);
+        =}
+    }
+
+    mode PRE_TURN {
+        reaction(angle_in) -> reset(TURNING), notify, left_power, right_power {=
+            self->start_angle = angle_in->value;
+            lf_set(notify, "TURNING");
+            lf_set(left_power,  self->turn_power);
+            lf_set(right_power, -self->turn_power);
+            lf_set_mode(TURNING);
+        =}
+    }
+
+    mode TURNING {
+        reaction(angle_in) -> reset(PRE_DRIVE), notify, left_power, right_power {=
+            float turned = fabsf(angle_in->value - self->start_angle);
+            if (turned >= self->target_angle) {
+                lf_set(notify, "STOPPING");
+                lf_set(left_power, 0.0f);
+                lf_set(right_power, 0.0f);
+                lf_set_mode(PRE_DRIVE);
+            }
+        =}
+    }
+}
+
+main reactor {
+    preamble {=
+        #include <stdio.h>
+    =}
+
+    timer sensor_timer(0, 50 msec)
+
+    display = new Display()
+    motors  = new Motors()
+    encoder = new Encoders()
+    dist    = new AngleToDistance()
+    gyro    = new GyroAngle()
+    bump    = new Bump()
+    robot   = new Robot()
+
+    reaction(sensor_timer) -> encoder.trigger, gyro.trigger {=
+        lf_set(encoder.trigger, true);
+        lf_set(gyro.trigger, true);
+    =}
+
+    encoder.left      -> dist.angle
+    dist.distance     -> robot.distance_in
+
+    gyro.z            -> robot.angle_in
+
+    bump.left         -> robot.bump_left
+    bump.right        -> robot.bump_right
+
+    robot.left_power  -> motors.left_power
+    robot.right_power -> motors.right_power
+
+    robot.notify      -> display.line0
+}

@@ -1,0 +1,275 @@
+target C {
+    platform: {
+        name: "rp2040",
+        board: "pololu_3pi_2040_robot"
+    },
+    single-threaded: true
+}
+
+import Display from "lib/Display.lf"
+import MotorsWithFeedback from "lib/MotorsWithFeedback.lf"
+import Line from "lib/Line.lf"
+import Encoders from "lib/Encoders.lf"
+import Accelerometer from "lib/IMU.lf"
+import GyroAngle from "lib/IMU.lf"
+
+
+reactor HillClimbRobot {
+    preamble {=
+        #include <math.h>
+        #include <stdio.h>
+    =}
+
+    input detect: int   // 0 = none, 1 = left, 2 = center, 3 = right
+    input init: bool
+    input acc_x: float
+    input acc_y: float
+    input gyro_z: float
+
+    output left_p: float 
+    output right_p: float 
+
+    logical action backup
+    logical action turning
+    logical action forward 
+    logical action turn_back  
+    logical action on_hill
+    logical action on_plain
+    logical action driving  
+
+    state start_angle: float = 0.0
+    state drive_power: float = 0.1
+    state turn_power: float = 0.1
+    state stored_direction: int = 0   // 1=left, 2=center, 3=right
+    state turned_times: int = 0   // number of times turned on plain
+
+    initial mode INIT {
+        reaction(startup) -> left_p, right_p {=
+            lf_set(left_p, 0.0f);
+            lf_set(right_p, 0.0f);
+        =}
+
+        reaction(init) -> reset(DRIVING) {=
+            lf_set_mode(DRIVING);
+        =}
+    }
+
+    mode DRIVING {
+        reaction(detect, acc_x) -> reset(BACK_UP), reset(ON_HILLS), reset(ON_PLAIN), left_p, right_p, backup, on_plain {=
+            if (detect->value != 0) {
+                self->stored_direction = detect->value;
+                // Schedule backing up
+                lf_schedule(backup, 0);
+                lf_set_mode(BACK_UP);
+            } else {
+                lf_set(left_p, self->drive_power);
+                lf_set(right_p, self->drive_power);
+                // determine if on hill
+                if ((acc_x->value > 0.1f) || (acc_x->value < -0.1f)) {
+                    lf_set_mode(ON_HILLS);
+                } else {
+                    // move forward for 1.5 seconds on plain
+                    lf_set(left_p, self->drive_power);
+                    lf_set(right_p, self->drive_power);
+                    lf_schedule(on_plain, MSEC(1500));
+                    lf_set_mode(ON_PLAIN);
+                }
+            }
+        =}
+
+    }
+
+    mode ON_HILLS {
+        reaction(acc_x, acc_y, gyro_z) -> reset(DRIVING), left_p, right_p {=
+            static float y_threshold = 0.05f;
+            static float x_threshold = 0.1f;
+            // Uphill
+            if (acc_x->value > x_threshold) {
+                // Too much right -> turn left
+                if (acc_y->value > y_threshold) {
+                    lf_set(left_p, -self->turn_power);
+                    lf_set(right_p,  self->turn_power);
+                
+                // Too much left -> turn right
+                } else if (acc_y->value < -y_threshold) {
+                    lf_set(left_p, self->turn_power);
+                    lf_set(right_p, -self->turn_power);
+                    
+                // Balanced -> keep driving
+                } else {
+                    lf_set(left_p, self->drive_power);
+                    lf_set(right_p, self->drive_power);
+                }
+
+            // Downhill
+            } else if (acc_x->value < -x_threshold) {
+                // Too much right -> turn left
+                if (acc_y->value < -y_threshold) {
+                    lf_set(left_p, -self->turn_power);
+                    lf_set(right_p,  self->turn_power);
+                
+                // Too much left -> turn right
+                } else if (acc_y->value > y_threshold) {
+                    lf_set(left_p, self->turn_power);
+                    lf_set(right_p, -self->turn_power);
+                    
+                // Balanced -> keep driving
+                } else {
+                    lf_set(left_p, self->drive_power);
+                    lf_set(right_p, self->drive_power);
+                }
+            }
+            lf_set_mode(DRIVING);
+        =} 
+
+    }
+
+    mode ON_PLAIN {
+        reaction(on_plain, gyro_z) -> reset(DRIVING), left_p, right_p, driving {=
+            static float z_threshold = 180.0f;
+            
+            // if turned angle<threshold -> turn left
+            if (gyro_z->value < z_threshold) {
+                    // Turn left 180 degrees
+                    lf_set(left_p, -self->turn_power);
+                    lf_set(right_p, self->turn_power);
+                    
+            } else {
+                // Turn complete. Transition to DRIVING to start descent.
+                lf_set(left_p, self->drive_power);
+                lf_set(right_p, self->drive_power);
+                lf_schedule(driving, SEC(1));
+            }
+            lf_set_mode(DRIVING);
+        =}
+    }
+
+
+    mode BACK_UP {
+        reaction(backup) -> reset(TURN), left_p, right_p, turning {=
+            // Reverse
+            lf_set(left_p, -self->drive_power);
+            lf_set(right_p, -self->drive_power);
+
+            // Schedule turning after 1000 ms
+            lf_schedule(turning, MSEC(500));
+            lf_set_mode(TURN);
+        =}
+    }
+
+    mode TURN {
+        reaction(turning) -> reset(DRIVING), left_p, right_p, driving {=
+            static float power_times = 1.5;
+            if (self->stored_direction == 1) {
+                // line on left -> turn right
+                lf_set(left_p,  power_times * self->turn_power);
+                lf_set(right_p, -power_times *self->turn_power);
+            } 
+            else if (self->stored_direction == 3) {
+                // line on right -> turn left
+                lf_set(left_p, -power_times *self->turn_power);
+                lf_set(right_p,  power_times *self->turn_power);
+            }
+            else if (self->stored_direction == 2) {
+                // center -> turn (default to right)
+                lf_set(left_p,  power_times * self->turn_power);
+                lf_set(right_p, -power_times * self->turn_power);
+            }
+
+            // After turning for 200 ms, go back to driving
+            lf_schedule(driving, MSEC(200));
+            lf_set_mode(DRIVING);
+        =}
+    }
+}
+
+
+main reactor (calibration_time: time = 5 s, sample_period: time = 100 ms) {
+    preamble {=
+        #include <stdio.h>
+    =}
+
+    display = new Display()
+    motors  = new MotorsWithFeedback()
+    robot   = new HillClimbRobot()
+    line    = new Line()
+    encoder = new Encoders()
+    acc     = new Accelerometer()
+    gyro    = new GyroAngle()
+
+
+    timer t(0, sample_period)
+    timer seconds(0, 1 s)  // Timer used to display seconds.
+    timer end_calibration(calibration_time)
+    state count: int = 0
+    state detected_direction: int = 0;
+
+    // == Calibration ==
+    reaction(startup) -> display.line0, display.line1, display.line2 {=
+        lf_set(display.line0, "CALIBRATING");
+        lf_set(display.line1, "Roll robot over");
+        lf_set(display.line2, "light and dark.");
+    =}
+
+    // Display time elapsed
+    reaction(seconds) -> display.line3 {=
+        static char buf[17];
+        snprintf(buf, 17, "time:%8d s", self->count++);
+        lf_set(display.line3, buf);
+    =}
+
+    // End calibration
+    reaction(end_calibration) -> line.calibrate, robot.init, robot.detect {=
+        lf_set(line.calibrate, false);
+        lf_set(robot.init, true);
+        lf_set(robot.detect, 0);
+    =}
+
+    // == Read sensors every t seconds ==
+    reaction(t) -> line.trigger, encoder.trigger, acc.trigger, gyro.trigger {=
+        lf_set(line.trigger, true);
+        lf_set(encoder.trigger, true);
+        lf_set(acc.trigger, true);
+        lf_set(gyro.trigger, true);
+    =}
+
+    reaction(line.reflect) -> robot.detect, display.line0, display.line1, display.line2 {=
+        static int threshold = 750;
+        static char buf0[17];
+        static char buf1[17];
+        static char buf2[17];
+        bool left = (line.reflect->value[0] > threshold || line.reflect->value[1] > threshold);
+        bool center = (line.reflect->value[1] > threshold || line.reflect->value[2] > threshold || line.reflect->value[3] > threshold);
+        bool right = (line.reflect->value[3] > threshold || line.reflect->value[4] > threshold);
+        
+        snprintf(buf0, 17, "");
+        snprintf(buf1, 17, "");
+        snprintf(buf2, 17, "");
+        self->detected_direction = 0;
+        if (left) {
+            snprintf(buf0, 17, "LEFT detected");
+            self->detected_direction = 1;
+        }
+        if (center) {
+            snprintf(buf1, 17, "CENTER detected");
+            self->detected_direction = 2;
+        }
+        if (right) {
+            snprintf(buf2, 17, "RIGHT detected");
+            self->detected_direction = 3;
+        }
+        lf_set(robot.detect, self->detected_direction);
+        lf_set(display.line0, buf0);
+        lf_set(display.line1, buf1);
+        lf_set(display.line2, buf2);
+    =}
+
+    acc.x -> robot.acc_x
+    acc.y -> robot.acc_y
+    gyro.z -> robot.gyro_z
+    robot.left_p  -> motors.left_speed
+    robot.right_p -> motors.right_speed
+    encoder.left -> motors.left
+    encoder.right -> motors.right
+
+}

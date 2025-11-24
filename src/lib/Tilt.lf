@@ -1,0 +1,33 @@
+target C {
+    platform: "RP2040",
+    single-threaded: true
+}
+
+preamble {=
+    #include<math.h>    
+=}
+
+reactor Tilt {
+    input x: float
+    input y: float
+    input z: float
+
+    output pitch: float
+    output roll: float
+    // output yaw: float
+
+    reaction(x, y, z) -> pitch, roll {=
+        float x_g = x->value;
+        float y_g = y->value;
+        float z_g = z->value;
+
+        // Calculate pitch and roll in degrees
+        float pitch_angle = atan2(-x_g, z_g) * 180.0 / M_PI;
+        float roll_angle = atan2(y_g, z_g) * 180.0 / M_PI;
+
+        // Convert the results from radians to degrees and set the output ports
+        lf_set(pitch, (float)pitch_angle);
+        lf_set(roll, (float)roll_angle);
+        // lf_set(yaw, (float)(yaw_rad * 180.0 / M_PI));
+    =}
+}
