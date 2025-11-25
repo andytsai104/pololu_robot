@@ -100,6 +100,11 @@ This repository serves as a technical portfolio demonstrating embedded programmi
 - Built a robot that drives in a square (drive → turn → repeat).
 - Implemented bump-sensor obstacle avoidance logic.
 
+**Demo**:
+<p align="center">
+  <img src="./media/RobotAvoidance.gif" width="300" />
+</p>
+
 📘 *Skills:* PWM · Odometry · Dead reckoning · Gyroscope  
 📂 *Files:* [Robot Drive](./src/RobotDriveSolution.lf), [Angle To Distance](./src/AngleToDistance.lf), [Robot Encoder](./src/RobotEncoderSolution.lf), [Robot Driving Square](./src/RobotSquareSolution.lf), [Robot Bump Sensor Avoidnace](./src/RobotAvoidSolution.lf)
 
@@ -125,7 +130,7 @@ Integrated all sensors:
 - **Gyroscope rotation** for accurate 180° turning at the plateau  
 - **Continuous edge monitoring** for safety on the ramp
 
-[**Demo for Hill Climb + Line Avoidance Robot**](https://www.youtube.com/shorts/r3BDc-mqix0)
+**Demo**: [**Hill Climb + Line Avoidance Robot**](https://www.youtube.com/shorts/r3BDc-mqix0)
 
 📘 *Skills:* Line sensing · Feedback control · Multi-sensor fusion  
 📂 *Files:* [Line Detection](./src/HillLineDetectSolution.lf), [Hill Line Avoidance](./src/HillLineAvoidSolution.lf), [Hill Climbing](./src/HillClimbSolution.lf)
