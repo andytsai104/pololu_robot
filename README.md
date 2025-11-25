@@ -127,7 +127,7 @@ Integrated all sensors:
 
 **Demo**:
 <p align="center">
-  <img src="./media/HillClimb.gif" width="600" />
+  <img src="./media/HillClimb.gif" width="400" />
 </p>
 
 📘 *Skills:* Line sensing · Feedback control · Multi-sensor fusion  
