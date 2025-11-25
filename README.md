@@ -43,7 +43,7 @@ This repository serves as a technical portfolio demonstrating embedded programmi
 - Demonstrated modularity using `ToolsLEDSolution.lf`.
 
 📘 *Skills:* Timers · GPIO · Modular reactors  
-📂 *Files:* [Blink](./src/ToolsBlinkSolution.lf), [LED state LCD Display](./src/ToolsPrintfSolution.lf), [LED control](./src/ToolsLEDSolution.lf)
+📂 *Files:* [Blink](./src/ToolsBlinkSolution.lf), [LED state Print out](./src/ToolsPrintfSolution.lf), [LED control](./src/ToolsLEDSolution.lf)
 
 ---
 
