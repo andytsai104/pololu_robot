@@ -1,6 +1,6 @@
 # Pololu 3pi+ Embedded Robotics with Lingua Franca
 ### Arizona State University — Fall 2025
-**Instructor:** Dr. Edward A. Lee  
+**Instructor:** Prof. Hokeun Kim
 **Student:** Chih-Hao (Andy) Tsai
 
 ---
@@ -21,7 +21,6 @@ This repository serves as a technical portfolio demonstrating embedded programmi
 - [Lab 4: Physical Actions, Debouncing, and Modal FSMs](#lab-4-physical-actions-debouncing-and-modal-fsms)
 - [Lab 5: Motors, Encoders, Gyroscope Navigation, and Obstacle Avoidance](#lab-5-motors-encoders-gyroscope-navigation-and-obstacle-avoidance)
 - [Lab 6: Line Sensing, Edge Avoidance, and Full Hill Climbing](#lab-6-line-sensing-edge-avoidance-and-full-hill-climbing)
-- [Demo Video](#demo-video)
 
 ---
 
@@ -44,7 +43,7 @@ This repository serves as a technical portfolio demonstrating embedded programmi
 - Demonstrated modularity using `ToolsLEDSolution.lf`.
 
 📘 *Skills:* Timers · GPIO · Modular reactors  
-📂 *Files:* `ToolsBlinkSolution.lf`, `ToolsPrintfSolution.lf`, `LED.lf`, `ToolsLEDSolution.lf`
+📂 *Files:* [Blink](./src/ToolsBlinkSolution.lf), [LED state LCD Display](./src/ToolsPrintfSolution.lf), [LED control](./src/ToolsLEDSolution.lf)
 
 ---
 
@@ -57,7 +56,7 @@ This repository serves as a technical portfolio demonstrating embedded programmi
 - Displayed filtered tilt values on the robot’s LCD.
 
 📘 *Skills:* IMU math · Filtering · LCD display  
-📂 *Files:* `Tilt.lf`, `SensorsTiltSolution.lf`
+📂 *Files:* [Tilt Sensor Readings](./src/SensorsTiltSolution.lf)
 
 ---
 
@@ -73,12 +72,7 @@ This repository serves as a technical portfolio demonstrating embedded programmi
 - Built a modal counting program reacting to button presses.
 
 📘 *Skills:* MMIO · NVIC · Physical vs logical time · Debouncing  
-📂 *Files:* `PeripheralsDirectSolution.lf`,  
-`PeripheralsButtonSolution.lf`,  
-`InterruptCallbackSolution.lf`,  
-`InterruptActionSolution.lf`,  
-`InterruptDebouncedSolution.lf`,  
-`InterruptModalSolution.lf`
+📂 *Files:* [Peripheral Buttons Control](./src/PeripheralsDirectSolution.lf), [Peripherals Button-Blink Control](./src/PeripheralsButtonSolution.lf)
 
 ---
 
@@ -91,7 +85,7 @@ This repository serves as a technical portfolio demonstrating embedded programmi
 - Built modal robots that switched behaviors based on user input.
 
 📘 *Skills:* ISRs · Hardware callbacks · Mode switching  
-📂 *Files:* Lab 4 program set
+📂 *Files:* [Interrupt Callback](./src/InterruptCallbackSolution.lf), [Interrupt](./src/InterruptActionSolution.lf), [Debouncing](./src/InterruptDebouncedSolution.lf), [Pushed Button Counter](./src/InterruptModalSolution.lf)
 
 ---
 
@@ -107,11 +101,7 @@ This repository serves as a technical portfolio demonstrating embedded programmi
 - Implemented bump-sensor obstacle avoidance logic.
 
 📘 *Skills:* PWM · Odometry · Dead reckoning · Gyroscope  
-📂 *Files:* `RobotDriveSolution.lf`,  
-`AngleToDistance.lf`,  
-`RobotEncoderSolution.lf`,  
-`RobotSquareSolution.lf`,  
-`RobotAvoidSolution.lf`
+📂 *Files:* [Robot Drive](./src/RobotDriveSolution.lf), [Angle To Distance](./src/AngleToDistance.lf), [Robot Encoder](./src/RobotEncoderSolution.lf), [Robot Driving Square](./src/RobotSquareSolution.lf), [Robot Bump Sensor Avoidnace](./src/RobotAvoidSolution.lf)
 
 ---
 
@@ -131,18 +121,18 @@ This was the most complex and complete robotics controller in the course.
 Integrated all sensors:
 - **Roll-based feedback** to maintain straight uphill motion  
 - **Pitch detection** for slope estimation  
-- **Encoder-based PI speed control** using `MotorsWithFeedback`  
+- **Encoder-based PI speed control** using MotorsWithFeedback  
 - **Gyroscope rotation** for accurate 180° turning at the plateau  
-- **Continuous edge monitoring** for safety on the ramp  
+- **Continuous edge monitoring** for safety on the ramp
+
+**Demo**:
+<p align="center">
+  <img src="./media/HillClimb.gif" width="600" />
+</p>
 
 📘 *Skills:* Line sensing · Feedback control · Multi-sensor fusion  
-📂 *Files:* `HillLineDetectSolution.lf`, `HillLineAvoidSolution.lf`, `HillClimbSolution.lf`
+📂 *Files:* [Line Detection](./src/HillLineDetectSolution.lf), [Hill Line Avoidance](./src/HillLineAvoidSolution.lf), [Hill Climbing](./src/HillClimbSolution.lf)
 
----
-
-# Demo Video  
-### **Hill Climb + Edge Avoidance (Final Project Demo)**  
-📹 `media/HillClimb.mp4`
 
 ---
 
