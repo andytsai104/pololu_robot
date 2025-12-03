@@ -1,0 +1,159 @@
+target C {
+    platform: {
+        name: "rp2040",
+        board: "pololu_3pi_2040_robot"
+    },
+    single-threaded: true
+}
+
+import Display from "lib/Display.lf"
+import Motors from "lib/Motors.lf"
+import Line from "lib/Line.lf"
+
+
+reactor TrackerRobot {
+    input detect: int
+    input init: bool
+
+    output left_p: float 
+    output right_p: float
+
+    state motor_power: float = 0.1
+    state slight_turn_power_L: float = 0.01
+    state slight_turn_power_H: float = 0.15
+
+    initial mode INIT {
+        reaction(startup) -> left_p, right_p {=
+            lf_set(left_p, 0.0f);
+            lf_set(right_p, 0.0f);
+        =}
+
+        reaction(init) -> reset(TRACKING) {=
+            lf_set_mode(TRACKING);
+        =}
+    }
+
+    mode TRACKING {
+        reaction(detect) -> left_p, right_p {=
+            if (detect->value == 1) {
+                // left
+                lf_set(left_p, self->slight_turn_power_L);
+                lf_set(right_p, self->motor_power);
+            } else if (detect->value == 2) {
+                // slight left
+                lf_set(left_p, self->slight_turn_power_L);
+                lf_set(right_p, self->slight_turn_power_H);
+            } else if (detect->value == 4) {
+                // slight right
+                lf_set(left_p, self->slight_turn_power_H);
+                lf_set(right_p, self->slight_turn_power_L);
+            } else if (detect->value == 5) {
+                // right
+                lf_set(left_p, self->motor_power);
+                lf_set(right_p, self->slight_turn_power_L);
+            } else if (detect->value == 0) {
+                // stop
+                lf_set(left_p, 0.0f);
+                lf_set(right_p, 0.0f);
+            } else {
+                // go forward
+                lf_set(left_p, self->motor_power);
+                lf_set(right_p, self->motor_power);
+
+            }
+        =}
+    }
+}
+
+main reactor(calibration_time: time = 5 s, sample_period: time = 100 ms){
+    
+    display = new Display()
+    motors  = new Motors()
+    line    = new Line()
+    robot = new TrackerRobot()
+
+
+    timer t(0, sample_period)
+    timer seconds(0, 1 s)  // Timer used to display seconds.
+    timer end_calibration(calibration_time)
+
+    state count: int = 0
+    state detected_direction: int = 0;
+
+    // == Calibration ==
+    reaction(startup) -> display.line0, display.line1, display.line2 {=
+        lf_set(display.line0, "CALIBRATING");
+        lf_set(display.line1, "Roll robot over");
+        lf_set(display.line2, "light and dark.");
+    =}
+
+    // Display time elapsed
+    reaction(seconds) -> display.line3 {=
+        static char buf[17];
+        snprintf(buf, 17, "time:%8d s", self->count++);
+        lf_set(display.line3, buf);
+    =}
+
+    // End calibration
+    reaction(end_calibration) -> line.calibrate, robot.init, display.line1, display.line2 {=
+        lf_set(line.calibrate, false);
+        lf_set(robot.init, true);
+        lf_set(display.line1, "");
+        lf_set(display.line2, "");
+    =}
+
+    // == Read sensors every t seconds ==
+    reaction(t) -> line.trigger {=
+        lf_set(line.trigger, true);
+    =}
+
+reaction(line.reflect) -> robot.detect, display.line0, display.line1 {=
+        static int threshold = 750;
+
+        // Detect where the BLACK line is (Value > Threshold)
+        bool left = (line.reflect->value[0] > threshold);
+        bool center_left = (line.reflect->value[1] > threshold);
+        bool center = (line.reflect->value[2] > threshold);
+        bool center_right = (line.reflect->value[3] > threshold);
+        bool right = (line.reflect->value[4] > threshold);
+        bool lost_line = (!left && !center_left && !center && !center_right && !right);
+        
+        static char buf[17];
+        
+        // Default to STOP
+        self->detected_direction = 1; 
+
+        if (lost_line) {
+            self->detected_direction = 0; // STOP
+            snprintf(buf, 17, "STOP (No Line)");
+        } 
+        if (left) {
+            self->detected_direction = 1; // Sharp Left
+            snprintf(buf, 17, "Turn LEFT");
+        } 
+        if (right) {
+            self->detected_direction = 5; // Sharp Right
+            snprintf(buf, 17, "Turn RIGHT");
+        } 
+        if (center) {
+            self->detected_direction = 3; // Forward
+            snprintf(buf, 17, "Go STRAIGHT");
+        }
+        else if (center_left) {
+            self->detected_direction = 2; // Slight Left
+            snprintf(buf, 17, "Go SLIGHT LEFT");
+        } 
+        else if (center_right) {
+            self->detected_direction = 4; // Slight Right
+            snprintf(buf, 17, "Go SLIGHT RIGHT");
+        }
+
+
+        lf_set(robot.detect, self->detected_direction);
+        lf_set(display.line0, buf);
+    =}
+
+    robot.left_p  -> motors.left_power
+    robot.right_p -> motors.right_power
+
+}
