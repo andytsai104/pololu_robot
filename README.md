@@ -131,9 +131,9 @@ Integrated all sensors:
 - **Continuous edge monitoring** for safety on the ramp
 
 **Demo**: [**Hill Climb + Line Avoidance Robot**](https://www.youtube.com/shorts/r3BDc-mqix0)
-<!-- <p align="center">
-  <video src="https://github.com/andytsai104/pololu_robot/blob/main/media/HillClimb.mp4" controls autoplay muted loop playsinline></video>
-</p> -->
+<video width="640" controls>
+  <source src="./media/HillClimb.mp4" type="video/mp4">
+</video>   
 
 📘 *Skills:* Line sensing · Feedback control · Multi-sensor fusion  
 📂 *Files:* [Line Detection](./src/HillLineDetectSolution.lf), [Hill Line Avoidance](./src/HillLineAvoidSolution.lf), [Hill Climbing](./src/HillClimbSolution.lf)
