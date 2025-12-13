@@ -141,10 +141,10 @@ Integrated all sensors:
 
 ---
 
-Lab 7: Track and Line Following
-Key topics: IR sensor calibration, Proportional (P) control, differential steering
+### Lab 7: Track and Line Following
+**Key topics:** IR sensor calibration, Proportional (P) control, differential steering
 
-Highlights
+### Highlights
 - Calibrated all five IR line sensors to normalize reflectance values against ambient light and surface conditions.
 - Calculated line position error using a weighted average of sensor indices to estimate the robot's lateral deviation.
 - Implemented a Proportional (P) controller to adjust left and right wheel speeds asymmetrically based on real-time error.
