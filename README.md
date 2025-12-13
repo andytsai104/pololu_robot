@@ -131,7 +131,10 @@ Integrated all sensors:
 - **Gyroscope rotation** for accurate 180° turning at the plateau  
 - **Continuous edge monitoring** for safety on the ramp
 
-**Demo**: [**Hill Climb + Line Avoidance Robot**](https://www.youtube.com/shorts/r3BDc-mqix0)
+**Demo**: 
+<p align="center">
+  <img src="./media/HillClimb.gif" width="300" />
+</p>
 
 📘 *Skills:* Line sensing · Feedback control · Multi-sensor fusion  
 📂 *Files:* [Line Detection](./src/HillLineDetectSolution.lf), [Hill Line Avoidance](./src/HillLineAvoidSolution.lf), [Hill Climbing](./src/HillClimbSolution.lf)
