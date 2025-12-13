@@ -153,8 +153,8 @@ Highlights
   <img src="./media/LT_demo.gif" width="300" />
 </p>
 
-📘 Skills: Porpotional Control · Sensor Fusion · Signal Normalization · Autonomous Navigation 
-📂 Files: [Track Following](./src/TrackFollowSolution.lf)
+📘 *Skills*: Porpotional Control · Sensor Fusion · Signal Normalization · Autonomous Navigation 
+📂 *File*: [Track Following](./src/TrackFollowSolution.lf)
 
 ---
 
