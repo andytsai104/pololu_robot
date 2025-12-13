@@ -21,6 +21,7 @@ This repository serves as a technical portfolio demonstrating embedded programmi
 - [Lab 4: Physical Actions, Debouncing, and Modal FSMs](#lab-4-physical-actions-debouncing-and-modal-fsms)
 - [Lab 5: Motors, Encoders, Gyroscope Navigation, and Obstacle Avoidance](#lab-5-motors-encoders-gyroscope-navigation-and-obstacle-avoidance)
 - [Lab 6: Line Sensing, Edge Avoidance, and Full Hill Climbing](#lab-6-line-sensing-edge-avoidance-and-full-hill-climbing)
+- [Lab 7: Track and Line Following](#lab-7-track-and-line-following)
 
 ---
 
@@ -116,13 +117,13 @@ This repository serves as a technical portfolio demonstrating embedded programmi
 This was the most complex and complete robotics controller in the course.
 
 ### Highlights
-### ✔ Line Sensor Edge Detection
+### Line Sensor Edge Detection
 - Used all 5 IR sensors to classify: **Left**, **Center**, **Right** edges.
 
-### ✔ Edge Avoidance Behavior
+### Edge Avoidance Behavior
 - Drive → detect → back up → turn → recover.
 
-### ✔ Hill Climbing Controller
+### Hill Climbing Controller
 Integrated all sensors:
 - **Roll-based feedback** to maintain straight uphill motion  
 - **Pitch detection** for slope estimation  
@@ -131,12 +132,29 @@ Integrated all sensors:
 - **Continuous edge monitoring** for safety on the ramp
 
 **Demo**: [**Hill Climb + Line Avoidance Robot**](https://www.youtube.com/shorts/r3BDc-mqix0)
-<video width="640" controls>
-  <source src="./media/HillClimb.mp4" type="video/mp4">
-</video>   
 
 📘 *Skills:* Line sensing · Feedback control · Multi-sensor fusion  
 📂 *Files:* [Line Detection](./src/HillLineDetectSolution.lf), [Hill Line Avoidance](./src/HillLineAvoidSolution.lf), [Hill Climbing](./src/HillClimbSolution.lf)
+
+---
+
+Lab 7: Track and Line Following
+Key topics: IR sensor calibration, Proportional (P) control, differential steering
+
+Highlights
+- Calibrated all five IR line sensors to normalize reflectance values against ambient light and surface conditions.
+- Calculated line position error using a weighted average of sensor indices to estimate the robot's lateral deviation.
+- Implemented a Proportional (P) controller to adjust left and right wheel speeds asymmetrically based on real-time error.
+- Developed dynamic speed control logic: reducing base speed when outer sensors detect sharp curves and increasing speed on straight segments.
+- Utilized the gyroscope to smooth heading changes and prevent aggressive oscillations during turns.
+
+**Demo**
+<p align="center">
+  <img src="./media/LT_demo.gif" width="300" />
+</p>
+
+📘 Skills: Porpotional Control · Sensor Fusion · Signal Normalization · Autonomous Navigation 
+📂 Files: [Track Following](./src/TrackFollowSolution.lf)
 
 ---
 
