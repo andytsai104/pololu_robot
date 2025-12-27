@@ -36,7 +36,7 @@ This repository serves as a technical portfolio demonstrating embedded programmi
 
 ---
 
-# Lab 1: Timers, LED Control, and Modular Reactors
+## Lab 1: Timers, LED Control, and Modular Reactors
 **Key topics:** LF timers, logical time, GPIO LED control  
 
 ### Highlights
@@ -50,7 +50,7 @@ This repository serves as a technical portfolio demonstrating embedded programmi
 
 ---
 
-# Lab 2: Accelerometers, Tilt Computation, and Sensor Fusion
+## Lab 2: Accelerometers, Tilt Computation, and Sensor Fusion
 **Key topics:** IMU processing, pitch/roll computation, trigonometry
 
 ### Highlights
@@ -63,7 +63,7 @@ This repository serves as a technical portfolio demonstrating embedded programmi
 
 ---
 
-# Lab 3: GPIO, Memory-Mapped I/O, and Interrupts
+## Lab 3: GPIO, Memory-Mapped I/O, and Interrupts
 **Key topics:** direct register access, polling vs interrupts, debouncing
 
 ### Highlights
@@ -79,7 +79,7 @@ This repository serves as a technical portfolio demonstrating embedded programmi
 
 ---
 
-# Lab 4: Physical Actions, Debouncing, and Modal FSMs
+## Lab 4: Physical Actions, Debouncing, and Modal FSMs
 **Key topics:** interrupt timing, nested interrupts, FSM-driven behavior
 
 ### Highlights
@@ -92,7 +92,7 @@ This repository serves as a technical portfolio demonstrating embedded programmi
 
 ---
 
-# Lab 5: Motors, Encoders, Gyroscope Navigation, and Obstacle Avoidance
+## Lab 5: Motors, Encoders, Gyroscope Navigation, and Obstacle Avoidance
 **Key topics:** PWM motor control, odometry, gyro integration
 
 ### Highlights
@@ -113,7 +113,7 @@ This repository serves as a technical portfolio demonstrating embedded programmi
 
 ---
 
-# Lab 6: Line Sensing, Edge Avoidance, and Full Hill Climbing
+## Lab 6: Line Sensing, Edge Avoidance, and Full Hill Climbing
 **Key topics:** IR sensing, edge detection, feedback control, PI motor feedback
 
 This was the most complex and complete robotics controller in the course.
@@ -143,7 +143,7 @@ Integrated all sensors:
 
 ---
 
-### Lab 7: Track and Line Following
+## Lab 7: Track and Line Following
 **Key topics:** IR sensor calibration, Proportional (P) control, differential steering
 
 ### Highlights
