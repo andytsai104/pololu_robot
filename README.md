@@ -1,6 +1,8 @@
 # Pololu 3pi+ Embedded Robotics with Lingua Franca
 ### Arizona State University — Fall 2025
+
 **Instructor:** Prof. Hokeun Kim
+
 **Student:** Chih-Hao (Andy) Tsai
 
 ---
